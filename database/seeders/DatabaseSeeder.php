@@ -20,11 +20,16 @@ class DatabaseSeeder extends Seeder
             'email' => 'test@example.com',
         ]);
 
+        $jasper = User::factory()->create([
+            'name' => 'Jasper',
+            'email' => 'jasper@example.com',
+        ]);
+
         Scores::create([
             'user_id' => $user->id,
             'score' => 8,
             'max_score' => 10,
-            'activity_type' => 'quiz',
+            'activity_type' => 'sim-racing',
             'location' => 'noordkade-uitjes',
         ]);
 
@@ -32,15 +37,39 @@ class DatabaseSeeder extends Seeder
             'user_id' => $user->id,
             'score' => 6,
             'max_score' => 10,
-            'activity_type' => 'challenge',
+            'activity_type' => 'axe-throwing',
             'location' => 'noordkade-uitjes',
         ]);
 
         Scores::create([
             'user_id' => $user->id,
             'score' => 9,
+            'max_score' => 20,
+            'activity_type' => 'tennis',
+            'location' => 'noordkade-uitjes',
+        ]);
+
+        Scores::create([
+            'user_id' => $jasper->id,
+            'score' => 7,
             'max_score' => 10,
-            'activity_type' => 'round',
+            'activity_type' => 'sim-racing',
+            'location' => 'noordkade-uitjes',
+        ]);
+
+        Scores::create([
+            'user_id' => $jasper->id,
+            'score' => 5,
+            'max_score' => 10,
+            'activity_type' => 'axe-throwing',
+            'location' => 'noordkade-uitjes',
+        ]);
+
+        Scores::create([
+            'user_id' => $jasper->id,
+            'score' => 14,
+            'max_score' => 20,
+            'activity_type' => 'tennis',
             'location' => 'noordkade-uitjes',
         ]);
     }
