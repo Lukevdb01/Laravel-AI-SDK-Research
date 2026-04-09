@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/', 'Welcome')->name('home');
+Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+Route::get('/ai/handle', [DashboardController::class, 'aiRequestHandler'])->name('ai.handle');
