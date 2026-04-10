@@ -2,13 +2,15 @@
 
 namespace App\Ai\Agents;
 
+use App\Ai\Middleware\LogPrompts;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Contracts\Agent;
+use Laravel\Ai\Contracts\HasMiddleware;
 use Laravel\Ai\Contracts\HasStructuredOutput;
 use Laravel\Ai\Promptable;
 use Stringable;
 
-class QuizMaster implements Agent, HasStructuredOutput
+class QuizMaster implements Agent, HasStructuredOutput, HasMiddleware
 {
     use Promptable;
 
@@ -64,6 +66,16 @@ class QuizMaster implements Agent, HasStructuredOutput
         return [
             'temperature' => 0.7,
             'max_tokens' => 500,
+        ];
+    }
+
+    /**
+     * Get the middleware that should run for each prompt.
+     */
+    public function middleware(): array
+    {
+        return [
+            LogPrompts::class,
         ];
     }
 }
