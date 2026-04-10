@@ -4,52 +4,55 @@ namespace App\Http\Controllers;
 
 use App\Ai\Agents\QuizMaster;
 use App\Models\User;
-use Throwable;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Laravel\Ai\Responses\StructuredAgentResponse;
+use Throwable;
 
 class DashboardController extends Controller
 {
     public function index()
     {
         return Inertia::render('Dashboard', [
-            'dataset' => $this->dataset_builder()
+
         ]);
     }
 
     public function aiRequestHandler(Request $request)
     {
         try {
-            $agent = new QuizMaster;
-            $prompt = 'Gebruik je eigen agent instructions als baseline richtlijn. '
-                . 'Maak een korte recap-quiz (maximaal 3 vragen) op basis van alle deelnemers en alle activiteiten uit de dataset hieronder. '
-                . 'Reageer volgens het schema van de agent met de velden questions, options en answers. '
-                . 'Zorg dat dezelfde index bij elkaar hoort (questions[i], options[i], answers[i]).'
-                . "\n\nDataset (JSON):\n"
-                . json_encode($this->dataset_builder(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            $prompt = 'JSON DATASET: '.json_encode($this->datasetBuilder(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            $response = (new QuizMaster)->prompt(prompt: $prompt);
 
-            $response = $agent->prompt(prompt: $prompt, provider: $agent->provider());
+            $payload = $response instanceof StructuredAgentResponse ? $response->toArray() : ['text' => $response->text];
 
-            $payload = $response instanceof StructuredAgentResponse
-                ? $response->toArray()
-                : ['text' => $response->text];
-
-            return response()->json([
-                'ok' => true,
-                'response' => $payload,
-            ]);
+            return response()->json(['ok' => true, 'response' => $payload], 200);
         } catch (Throwable $e) {
-            return response()->json([
-                'ok' => false,
-                'error' => $e->getMessage(),
-            ], 500);
+            return response()->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
 
-    private function dataset_builder()
+    private function datasetBuilder()
     {
-        $users_with_scores = User::with('scores')->get();
+        $user_and_score = User::query()->select('users.id', 'users.name')
+            ->with([
+                'scores' => function ($query) {
+                    $query->select('id', 'user_id', 'score', 'activity_type');
+                },
+            ])->get()->map(function (User $user) {
+                return [
+                    'user_data' => [
+                        'username' => $user->name,
+                    ],
+                    'scores' => $user->scores->map(function ($score) {
+                        return [
+                            'score' => $score->score,
+                            'activity-type' => $score->activity_type,
+                        ];
+                    })->values(),
+                ];
+            })->values();
+
         $location_information = [
             [
                 'location' => 'Noordkade Uitjes, Verlengde Noordkade 4a, 5462 EH Veghel',
@@ -58,8 +61,6 @@ class DashboardController extends Controller
                 'description' => '60 minuten bijlwerpen met begeleiding van Axeperts. Geschikt voor teamuitjes vanaf 16 jaar, tot 24 personen.',
                 'duration_minutes' => 60,
                 'age_min' => 16,
-                'indoor' => true,
-                'group_max' => 24,
             ],
             [
                 'location' => 'Noordkade Uitjes, Verlengde Noordkade 4a, 5462 EH Veghel',
@@ -68,8 +69,6 @@ class DashboardController extends Controller
                 'description' => 'Race op Formule 1-circuits met 20 racesimulatoren. Voor teamuitjes en kinderfeestjes.',
                 'duration_minutes' => 60,
                 'age_min' => 0,
-                'indoor' => true,
-                'group_max' => 20,
             ],
             [
                 'location' => 'Noordkade Uitjes, Verlengde Noordkade 4a, 5462 EH Veghel',
@@ -78,13 +77,11 @@ class DashboardController extends Controller
                 'description' => 'Fictieve activiteit: speel een energieke tennis challenge op de Noordkade met mini-toernooi en begeleiding.',
                 'duration_minutes' => 75,
                 'age_min' => 10,
-                'indoor' => false,
-                'group_max' => 16,
             ],
         ];
 
         return [
-            'users_with_scores' => $users_with_scores,
+            'user_and_score' => $user_and_score,
             'location_information' => $location_information,
         ];
     }
