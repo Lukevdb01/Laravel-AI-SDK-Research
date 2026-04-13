@@ -10,7 +10,7 @@ use Laravel\Ai\Contracts\HasStructuredOutput;
 use Laravel\Ai\Promptable;
 use Stringable;
 
-class QuizMaster implements Agent, HasStructuredOutput, HasMiddleware
+class QuizMaster implements Agent, HasMiddleware, HasStructuredOutput
 {
     use Promptable;
 
@@ -40,7 +40,7 @@ class QuizMaster implements Agent, HasStructuredOutput, HasMiddleware
                 ->max(3)
                 ->items($schema->string())
                 ->required()
-                ->description('Maximaal 3 quizvragen.'),
+                ->description('Maximum 3 quiz questions.'),
             'options' => $schema->array()
                 ->min(1)
                 ->max(3)
@@ -51,21 +51,13 @@ class QuizMaster implements Agent, HasStructuredOutput, HasMiddleware
                         ->items($schema->string())
                 )
                 ->required()
-                ->description('Meerkeuze-opties per vraag. Index moet overeenkomen met questions.'),
+                ->description('Multiple choice options per question. Index must match questions.'),
             'answers' => $schema->array()
                 ->min(1)
                 ->max(3)
                 ->items($schema->string())
                 ->required()
-                ->description('Correct antwoord per vraag. Index moet overeenkomen met questions.'),
-        ];
-    }
-
-    public function system(): array
-    {
-        return [
-            'temperature' => 0.7,
-            'max_tokens' => 500,
+                ->description('Correct answer per question. Index must match questions.'),
         ];
     }
 
