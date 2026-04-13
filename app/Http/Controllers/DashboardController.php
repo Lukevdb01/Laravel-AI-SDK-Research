@@ -54,7 +54,9 @@ class DashboardController extends Controller
 
     private function getEmbeddingOllama(string $text): array
     {
-        $response = Http::timeout(60)->post('http://localhost:11434/api/embed', [
+        $ollamaBaseUrl = rtrim((string) config('app.ollama_base_url', 'http://localhost:11434'), '/');
+
+        $response = Http::timeout(60)->post($ollamaBaseUrl.'/api/embed', [
             'model' => 'nomic-embed-text',
             'input' => $text,
         ])->json();

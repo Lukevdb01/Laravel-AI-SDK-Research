@@ -15,6 +15,7 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
     'qdrant_host_url' => env('QDRANT_HOST_URL', 'http://127.0.0.1:6333'),
+    'ollama_base_url' => env('OLLAMA_BASE_URL', 'http://localhost:11434'),
 
     /*
     |--------------------------------------------------------------------------
