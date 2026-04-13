@@ -16,36 +16,60 @@ class QdrantService
         ]);
     }
 
-    public function upsertVector($collectionName, $pointId, $vector, $payload): void
+    public function upsertVector($collectionName, $pointId, $vector, $payload)
     {
-        Http::put(
+        $response = Http::put(
             "http://localhost:6333/collections/{$collectionName}/points",
             [
                 'points' => [
                     [
                         'id' => $pointId,
                         'vector' => $vector,
-                        'payload' => $payload, // ← Zorg dat dit hier is
+                        'payload' => $payload,
                     ],
                 ],
             ]
         )->json();
+
+        // Debug: check response
+        if (isset($response['status']['error'])) {
+            dd('Qdrant error:', $response['status']['error']);
+        }
+
+        return $response;
     }
 
-    public function searchVector($collectionName, $vector, $limit = 5): array
+    public function semanticSearch(string $collectionName, array $vector, array $activity_types = [], int $limit = 10): array
     {
+        $payload = [
+            'vector' => $vector,
+            'limit' => $limit,
+            'with_payload' => true,
+        ];
+
+        // Optional: filter op activity_types PLUS semantic search
+        if (!empty($activity_types)) {
+            $payload['filter'] = [
+                'must' => [
+                    [
+                        'key' => 'activity_type',
+                        'match' => [
+                            'any' => $activity_types,
+                        ],
+                    ],
+                ],
+            ];
+        }
+
         $response = Http::post(
             "http://localhost:6333/collections/{$collectionName}/points/search",
-            [
-                'vector' => $vector,
-                'limit' => $limit,
-                'with_payload' => true,
-            ]
+            $payload
         )->json();
 
-        // Extract payloads from results
         return collect($response['result'] ?? [])->map(function ($item) {
-            return $item['payload'] ?? []; // ← Add payload extraction
+            return array_merge(
+                $item['payload'] ?? []
+            );
         })->toArray();
     }
 }

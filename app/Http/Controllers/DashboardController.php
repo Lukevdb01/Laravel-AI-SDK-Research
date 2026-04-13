@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Ai\Agents\QuizMaster;
 use App\Models\User;
 use App\Services\QdrantService;
+use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
 use Laravel\Ai\Responses\StructuredAgentResponse;
 use Throwable;
@@ -26,9 +27,17 @@ class DashboardController extends Controller
     public function aiRequestHandler()
     {
         try {
+            $users = $this->datasetBuilder();
+            $activity_types = collect($users)->flatMap(fn ($user) => collect($user['scores'])->pluck('activity_type'))->unique()->toArray();
+
+            $query = implode(', ', $activity_types);
+            $query_embedding = $this->getEmbeddingOllama($query);
+
+            $locations = $this->qdrant->semanticSearch('locations', $query_embedding, $activity_types, limit: 100);
+
             $dataset = [
-                'users' => $this->datasetBuilder(),
-                'locations' => $this->getAllLocationsFromQdrant(),
+                'users' => $users,
+                'locations' => $locations,
             ];
 
             $prompt = json_encode($dataset, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
@@ -42,11 +51,18 @@ class DashboardController extends Controller
         }
     }
 
-    private function getAllLocationsFromQdrant(): array
+    private function getEmbeddingOllama(string $text): array
     {
-        $vector = array_fill(0, 768, 0.1);
+        $response = Http::timeout(60)->post('http://localhost:11434/api/embed', [
+            'model' => 'nomic-embed-text',
+            'input' => $text,
+        ])->json();
 
-        return $this->qdrant->searchVector('locations', $vector, limit: 100);
+        if (isset($response['embeddings']) && is_array($response['embeddings']) && count($response['embeddings']) > 0) {
+            return $response['embeddings'][0];
+        }
+
+        return [];
     }
 
     private function datasetBuilder()
