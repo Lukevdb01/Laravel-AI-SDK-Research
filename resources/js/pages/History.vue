@@ -17,18 +17,6 @@ defineProps<{
 
 const selectedLog = ref<HistoryLog | null>(null);
 
-const prettyJson = (value: unknown): string => {
-    if (value === null || value === undefined) {
-        return '';
-    }
-
-    try {
-        return JSON.stringify(value, null, 2);
-    } catch {
-        return String(value);
-    }
-};
-
 const hasResponseContent = (value: unknown): boolean => {
     if (Array.isArray(value)) {
         return value.length > 0;
@@ -133,7 +121,7 @@ const closeDetails = (): void => {
 
                     <div v-if="hasResponseContent(selectedLog.response)" class="mt-3">
                         <h3 class="mb-2 text-sm font-semibold">Response</h3>
-                        <pre class="m-0 max-w-full break-words whitespace-pre-wrap border border-slate-300 bg-slate-50 p-3 font-mono text-xs text-slate-900">{{ prettyJson(selectedLog.response) }}</pre>
+                        <pre class="m-0 max-w-full break-words whitespace-pre-wrap border border-slate-300 bg-slate-50 p-3 font-mono text-xs text-slate-900">{{ selectedLog.response }}</pre>
                     </div>
                 </div>
             </div>
