@@ -28,7 +28,8 @@ class DashboardController extends Controller
     {
         try {
             $users = $this->datasetBuilder();
-            $activity_types = collect($users)->flatMap(fn ($user) => collect($user['scores'])->pluck('activity_type'))->unique()->toArray();
+
+            $activity_types = collect($users)->flatMap(fn ($scores) => array_keys($scores))->unique()->toArray();
 
             $query = implode(', ', $activity_types);
             $query_embedding = $this->getEmbeddingOllama($query);
@@ -41,8 +42,8 @@ class DashboardController extends Controller
             ];
 
             $prompt = json_encode($dataset, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-            $response = (new QuizMaster)->prompt(prompt: $prompt);
 
+            $response = (new QuizMaster)->prompt(prompt: $prompt);
             $payload = $response instanceof StructuredAgentResponse ? $response->toArray() : ['text' => $response->text];
 
             return response()->json(['ok' => true, 'response' => $payload], 200);
@@ -72,18 +73,12 @@ class DashboardController extends Controller
                 'scores' => function ($query) {
                     $query->select('id', 'user_id', 'score', 'activity_type');
                 },
-            ])->get()->map(function (User $user) {
-                return [
-                    'user_data' => [
-                        'username' => $user->name,
-                    ],
-                    'scores' => $user->scores->map(function ($score) {
-                        return [
-                            'score' => $score->score,
-                            'activity_type' => $score->activity_type,
-                        ];
-                    })->values(),
-                ];
-            })->values();
+            ])->get()->mapWithKeys(function (User $user) {
+                $scores = $user->scores->mapWithKeys(function ($score) {
+                    return [$score->activity_type => $score->score];
+                })->toArray();
+
+                return [$user->name => $scores];
+            })->toArray();
     }
 }

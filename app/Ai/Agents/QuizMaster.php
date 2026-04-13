@@ -19,7 +19,7 @@ class QuizMaster implements Agent, HasStructuredOutput, HasMiddleware
      */
     public function instructions(): Stringable|string
     {
-        return file_get_contents(storage_path('app/private/instructions/QUIZ_INSTRUCTION.md'));
+        return file_get_contents(storage_path('app/private/instructions/QUIZ_INSTRUCTION.json'));
     }
 
     /**
